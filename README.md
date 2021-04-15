@@ -13,3 +13,10 @@ A user navigates to an application and is presented with a login page as a way t
     3) if you are new user you can do register your self.
 
 
+# The second File Managment.py:
+
+My project is student management system helps a school manage data and scheduling. A school system generates new record for new Studente. This data must be communicated appropriately to students, faculty, and parents. A student management system helps schools to store, manage, and distribute this information.
+
+
+
+
