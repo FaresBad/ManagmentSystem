@@ -1,7 +1,7 @@
 from tkinter import *
 from tkinter import ttk
 import pymysql
-import mysql.connector
+from tkinter import messagebox
 
 class Student:
     def __init__(self, *args, **kwargs):
@@ -21,6 +21,9 @@ class Student:
         self.conatct_var=StringVar()
         self.dob_var=StringVar()
 
+        self.search_by = StringVar()
+        self.search_txt = StringVar()
+
 
 
         #================== Manage Frame =====================
@@ -29,6 +32,7 @@ class Student:
 
         m_title=Label(Manage_Frame,text="Manage Students",font=("time new roman",30,"bold"),bg="crimson",fg="white")
         m_title.grid(row=0,columnspan=2,pady=20)
+
 
         #---------------------- Roll No label --------------------------
         lbl_roll=Label(Manage_Frame,text="Roll No:",bg="crimson",fg="white",font=("time new roman",20,"bold"))
@@ -86,9 +90,9 @@ class Student:
         btn_Frame.place(x=10,y=500,width=450,height=50)
 
         add_button=Button(btn_Frame,text="Add",width=9,command=self.add_student).grid(row=0,column=0,padx=10,pady=10)
-        update_button=Button(btn_Frame,text="Update",width=9).grid(row=0,column=1,padx=10,pady=10)
-        delete_button=Button(btn_Frame,text="Delete",width=9,command=self.delete_all).grid(row=0,column=2,padx=10,pady=10)
-        clear_button=Button(btn_Frame,text="Clear",width=9).grid(row=0,column=3,padx=10,pady=10)
+        update_button=Button(btn_Frame,text="Update",width=9,command=self.update_data).grid(row=0,column=1,padx=10,pady=10)
+        delete_button=Button(btn_Frame,text="Delete",width=9,command=self.delete_data).grid(row=0,column=2,padx=10,pady=10)
+        clear_button=Button(btn_Frame,text="Clear",width=9,command=self.clear).grid(row=0,column=3,padx=10,pady=10)
 
 
 
@@ -105,19 +109,28 @@ class Student:
         lbl_search=Label(detail_Frame,text="search by",bg="crimson",fg="white",font=("time new roman",20,"bold"))
         lbl_search.grid(row=0,column=0,pady=10,padx=20)
 
-        combo_search = ttk.Combobox(detail_Frame,width=10,font=("time new roman", 15, "bold"))
-        combo_search['values'] = ("Roll No", "Name", "Contact")
+        combo_search = ttk.Combobox(detail_Frame,textvariable=self.search_by,width=10,font=("time new roman", 15, "bold"))
+        combo_search['values'] = ("Name", "Contact")
         combo_search.grid(row=0, column=1, pady=10, padx=20)
 
-        txt_Search=Entry(detail_Frame,font=("times new roman",15,"bold"),bd=5,relief=GROOVE)
+        txt_Search=Entry(detail_Frame,textvariable=self.search_txt,font=("times new roman",15,"bold"),bd=5,relief=GROOVE)
         txt_Search.grid(row=0,column=2,pady=10,padx=20,sticky="w")
 
-        search_button=Button(detail_Frame,text="Search",width=9).grid(row=0,column=3,padx=10,pady=10)
-        showAll_button=Button(detail_Frame,text="Show All",width=9).grid(row=0,column=4,padx=10,pady=10)
+        search_button=Button(detail_Frame,text="Search",width=9,command=self.search_data).grid(row=0,column=3,padx=10,pady=10)
+        showAll_button=Button(detail_Frame,text="Show All",width=9,command=self.fetch_data).grid(row=0,column=4,padx=10,pady=10)
+
+
+
 
         #======================Table Frame ================================
         Table_Frame=Frame(detail_Frame,bd=3,relief=RIDGE,bg="crimson")
         Table_Frame.place(x=10,y=70,width=760,height=450)
+
+        exit_Frame = Frame(detail_Frame, bd=3, relief=RIDGE, bg="crimson")
+        exit_Frame.place(x=300, y=520, width=100, height=35)
+
+        btn_exit = Button(exit_Frame, text="Exit",width=12,height=2,command=self.login_back,font=("times new roman", 15, "bold"), bg="white", fg="#B00857")
+        btn_exit.grid(row=0, column=0)
 
         scroll_x=Scrollbar(Table_Frame,orient=HORIZONTAL)
         scroll_y=Scrollbar(Table_Frame,orient=VERTICAL)
@@ -142,24 +155,30 @@ class Student:
         self.Student_table.column("dob",width=100)
         self.Student_table.column("Address",width=150)
         self.Student_table.pack(fill=BOTH,expand=1)
+        self.Student_table.bind("<ButtonRelease-1>",self.get_cursor)
+
         self.fetch_data()
 
         #add student for my dataBase when you click add button
     def add_student(self):
-        con=pymysql.connect(host="Localhost",user="root",password="",database="faresdb")
-        #con=pymysql.connect(host="localhost",port=8080,user="root",password="helloworld",database="stm")
-        cur=con.cursor()
-        cur.execute("insert into Stud values(%s,%s,%s,%s,%s,%s)",(self.roll_No_var.get(),
+        if self.roll_No_var.get()=="" or self.name_var.get()=="" or self.email_var.get()=="" or self.conatct_var.get()=="" or self.dob_var.get()=="":
+            messagebox.showerror("Error","Invalid,All field are required!!")
+        else:
+            con=pymysql.connect(host="Localhost",user="root",password="",database="faresdb")
+            cur=con.cursor()
+            cur.execute("insert into Stud values(%s,%s,%s,%s,%s,%s)",(self.roll_No_var.get(),
                     self.name_var.get(),self.email_var.get(),self.gender_var.get(),self.conatct_var.get(),self.dob_var.get()))
-        con.commit()
-        self.fetch_data()
-        con.close()
+            con.commit()
+            self.fetch_data()
+            self.clear()
+            con.close()
+            messagebox.showinfo("Success","Record has ben inserted")
 
-        #fetch data from Database and show me in my app window
+    #fetch data from Database and show me in my app window
     def fetch_data(self):
         con=pymysql.connect(host="Localhost",user="root",password="",database="faresdb")
         cur=con.cursor()
-        cur.execute("select * from student")
+        cur.execute("select * from stud")
         rows=cur.fetchall()
         if len(rows)!=0:
             self.Student_table.delete(*self.Student_table.get_children())
@@ -168,7 +187,7 @@ class Student:
             con.commit()
         con.close()
 
-    def delete_all(self):
+    def clear(self):
         self.txt_roll.delete(first=0,last=25)
         self.txt_name.delete(first=0,last=25)
         self.txt_email.delete(first=0, last=25)
@@ -176,6 +195,63 @@ class Student:
         self.txt_DOB.delete(first=0, last=25)
         self.txt_address.delete("1.0","end")
 
+    def get_cursor(self,ev):
+        curosor_row=self.Student_table.focus()
+        contents=self.Student_table.item(curosor_row)
+        row=contents['values']
+
+        self.roll_No_var.set(row[0])
+        self.name_var.set(row[1])
+        self.email_var.set(row[2])
+        self.gender_var.set(row[3])
+        self.conatct_var.set(row[4])
+        self.dob_var.set(row[5])
+        #self.txt_address.delete('1.0',END)
+        #self.txt_address.insert(END,row[6])
+
+    def update_data(self):
+        con = pymysql.connect(host="Localhost", user="root", password="", database="faresdb")
+        cur = con.cursor()
+        cur.execute("update stud set name=%s,email=%s,gender=%s,contact=%s,dob=%s where Id=%s",(
+
+                                                                    self.name_var.get(),
+                                                                    self.email_var.get(),
+                                                                    self.gender_var.get(),
+                                                                    self.conatct_var.get(),
+                                                                    self.dob_var.get(),
+                                                                    #self.txt_address.get('1.0',END),
+                                                                    self.roll_No_var.get()
+                                                                    ))
+        con.commit()
+        self.fetch_data()
+        self.clear()
+        con.close()
+
+    def delete_data(self):
+        con = pymysql.connect(host="Localhost", user="root", password="", database="faresdb")
+        cur = con.cursor()
+        cur.execute("delete from stud where Id=%s",self.roll_No_var.get())
+        con.commit()
+        con.close()
+        self.fetch_data()
+        self.clear()
+
+    def search_data(self):
+        con=pymysql.connect(host="Localhost",user="root",password="",database="faresdb")
+        cur=con.cursor()
+        cur.execute("select * from stud where "+str(self.search_by.get())+" LIKE '%"+str(self.search_txt.get())+"%'")
+        rows=cur.fetchall()
+        if len(rows)!=0:
+            self.Student_table.delete(*self.Student_table.get_children())
+            for row in rows:
+               self.Student_table.insert('',END,values=row)
+            con.commit()
+        con.close()
+
+    #This Function let as to go back for login Window
+    def login_back(self):
+        self.root.destroy()
+        import ManagmentSystem.login
 
 root=Tk()
 ob=Student(root)
